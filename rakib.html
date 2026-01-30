@@ -1,0 +1,200 @@
+
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ZISAN PRIMIUM V2</title>
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Arial', sans-serif; background: #000; }
+        
+        /* Game Frame */
+        #game-frame { width: 100%; height: 100vh; border: none; }
+
+        /* Login Screen */
+        #login-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; display: flex; justify-content: center;
+            align-items: center; z-index: 10000;
+        }
+        .login-card {
+            background: #111; padding: 30px; border-radius: 20px;
+            border: 1px solid #ff0000; text-align: center; color: #fff;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+        }
+        .login-card input { padding: 12px; border-radius: 8px; border: 1px solid #333; margin: 15px 0; width: 80%; background: #222; color: #fff; outline: none; }
+        .login-card button { padding: 12px 25px; background: #ff0000; border: none; cursor: pointer; font-weight: bold; border-radius: 8px; color: #fff; width: 100%; }
+
+        /* Draggable Box Design */
+        #signal-box {
+            position: absolute; top: 100px; left: 50%; transform: translateX(-50%);
+            width: 270px; background: #000; border-radius: 30px;
+            border: 2px solid #ff0000; padding: 0; z-index: 999;
+            box-shadow: 0 0 50px rgba(255, 0, 0, 0.8);
+            display: none; cursor: grab; user-select: none;
+            overflow: hidden;
+        }
+
+        .box-header {
+            display: flex; align-items: center; justify-content: flex-start;
+            padding: 15px 20px; background: rgba(20, 20, 20, 0.8);
+            border-bottom: 1px solid #222;
+        }
+        .avatar {
+            width: 45px; height: 45px; border-radius: 50%; 
+            border: 2px solid #ffd700; margin-right: 12px;
+            background: url('https://firebasestorage.googleapis.com/v0/b/buzz-bazar.appspot.com/o/IMAGE%2F1000075444.jpg?alt=media&token=3b5f3db2-2e1e-4647-afd1-600f64a54f67');
+            background-size: cover; background-position: center;
+        }
+        .header-text { color: #ffd700; font-weight: bold; font-size: 14px; text-transform: uppercase; }
+
+        .clock-section { text-align: center; color: #fff; font-size: 14px; margin: 15px 0 5px 0; opacity: 0.7; }
+        
+        .prediction-section {
+            background: rgba(40, 0, 0, 0.3); margin: 0 20px 10px 20px;
+            padding: 20px 10px; border-radius: 20px; text-align: center;
+            border: 1px solid #441111;
+        }
+        .pred-label { color: #888; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .pred-result { color: #ffd700; font-size: 26px; font-weight: 900; margin: 5px 0; }
+        .pred-timer { color: #ffd700; font-size: 20px; font-weight: bold; }
+
+        .btn-group { display: flex; justify-content: center; padding: 10px 20px 15px 20px; gap: 10px; }
+        .btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; color: white; font-size: 12px; }
+        .btn-hide { background: #222; }
+        .btn-exit { background: #cc0000; }
+
+        .footer-info { text-align: center; color: #444; font-size: 9px; padding-bottom: 15px; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+<div id="login-screen">
+    <div class="login-card">
+        <h2 style="color: #ff0000; margin: 0;">ZISAN BOSS V2</h2>
+        <p style="font-size: 11px; color: #666; margin-top: 5px;">Secure Quantum Connection</p>
+        <input type="password" id="passInput" placeholder="Enter Password">FUCK YOU <br>
+        <button onclick="attemptLogin()">LOGIN</button>
+        <p style="font-size: 9px; color: #333; margin-top: 10px;">Default: </p>
+    </div>
+</div>
+
+<iframe id="game-frame" src="https://dkwin15.com"></iframe>
+
+<div id="signal-box">
+    <div class="box-header" id="drag-handle">
+        <div class="avatar"></div>
+        <div class="header-text">ZISAN SURE SHOT</div>
+    </div>
+
+    <div class="clock-section" id="real-clock">00:00:00</div>
+
+    <div class="prediction-section">
+        <div class="pred-label">Prediction</div>
+        <div id="ai-result" class="pred-result">ANALYZING...</div>
+        <div id="timer" class="pred-timer">00s</div>
+    </div>
+
+    <div class="btn-group">
+        <button class="btn btn-hide" onclick="hideBox()">HIDE</button>
+        <button class="btn btn-exit" onclick="location.reload()">EXIT</button>
+    </div>
+
+    <div class="footer-info">System ID: ID-9967 | ZISAN V2</div>
+</div>
+
+<script>
+    // --- Draggable Logic (For Mobile and PC) ---
+    const box = document.getElementById("signal-box");
+    let isDragging = false, currentX, currentY, initialX, initialY, xOffset = 0, yOffset = 0;
+
+    box.addEventListener("mousedown", dragStart);
+    box.addEventListener("touchstart", dragStart, {passive: false});
+    document.addEventListener("mousemove", drag);
+    document.addEventListener("touchmove", drag, {passive: false});
+    document.addEventListener("mouseup", dragEnd);
+    document.addEventListener("touchend", dragEnd);
+
+    function dragStart(e) {
+        if (e.type === "touchstart") {
+            initialX = e.touches[0].clientX - xOffset;
+            initialY = e.touches[0].clientY - yOffset;
+        } else {
+            initialX = e.clientX - xOffset;
+            initialY = e.clientY - yOffset;
+        }
+        if (e.target.closest("#signal-box")) isDragging = true;
+    }
+
+    function drag(e) {
+        if (isDragging) {
+            e.preventDefault();
+            if (e.type === "touchmove") {
+                currentX = e.touches[0].clientX - initialX;
+                currentY = e.touches[0].clientY - initialY;
+            } else {
+                currentX = e.clientX - initialX;
+                currentY = e.clientY - initialY;
+            }
+            xOffset = currentX;
+            yOffset = currentY;
+            box.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
+        }
+    }
+    function dragEnd() { isDragging = false; }
+
+    // --- System Logic ---
+    function attemptLogin() {
+        if(document.getElementById("passInput").value === "zisan1234") {
+            document.getElementById("login-screen").style.display = "none";
+            document.getElementById("signal-box").style.display = "block";
+            runQuantumAI();
+        } else { alert("ভুল পাসওয়ার্ড মামা!"); }
+    }
+
+    function hideBox() { 
+        box.style.opacity = "0"; 
+        setTimeout(() => { box.style.opacity = "1"; }, 3000); 
+    }
+
+    async function fetchQuantumSignal() {
+        try {
+            const response = await fetch(`https://draw.ar-lottery01.com/WinGo/WinGo_30S/GetHistoryIssuePage.json?ts=${Date.now()}`);
+            const json = await response.json();
+            const list = json.data.list.slice(0, 10);
+            
+            let smalls = 0;
+            list.forEach(item => { if(parseInt(item.number) < 5) smalls++; });
+
+            // Quantum Logic: If Small appeared more than 5 times in last 10, predict BIG
+            const result = smalls >= 5 ? "BIG 🎰" : "SMALL 🤏";
+            document.getElementById("ai-result").innerText = result;
+        } catch (e) {
+            document.getElementById("ai-result").innerText = Math.random() > 0.5 ? "SMALL 🤏" : "BIG 🎰";
+        }
+    }
+
+    let lastP = "";
+    function runQuantumAI() {
+        setInterval(() => {
+            const now = new Date();
+            // Real Clock
+            document.getElementById("real-clock").innerText = now.toLocaleTimeString();
+
+            // Timer & Period
+            const sec = now.getSeconds();
+            const remaining = 30 - (sec % 30);
+            document.getElementById("timer").innerText = remaining + "s";
+
+            // Update Signal every 30s period
+            const currentP = Math.floor((now.getTime() / 1000) / 30);
+            if(currentP !== lastP) {
+                lastP = currentP;
+                fetchQuantumSignal();
+            }
+        }, 1000);
+    }
+</script>
+
+</body>
+</html>
